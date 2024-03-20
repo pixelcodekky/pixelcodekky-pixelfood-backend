@@ -1,0 +1,8 @@
+#Environment
+.env
+
+#complie
+dist/
+
+#packages
+node_modules/
