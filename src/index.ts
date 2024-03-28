@@ -3,9 +3,17 @@ import cors from 'cors';
 import 'dotenv/config';
 import mongoose from 'mongoose';
 import myUserRoute from './routes/MyuserRoutes';
+import myRestaurantRoute from './routes/MyRestaurantRoutes';
+import {v2 as cloudinary} from 'cloudinary';
 
 mongoose.connect(process.env.MONGODB_CONNECTION_STRING as string).then(() =>{
     console.log(`Mongo DB Service Connected.`);
+});
+
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
 const app = express();
@@ -20,9 +28,10 @@ app.get("/hello", async (req: Request, res: Response) => {
 
 //register routes
 app.use('/api/my/user', myUserRoute);
+app.use('/api/my/restaurant', myRestaurantRoute);
 
 
 app.listen(port, () => {
-    console.log(`Server is listen on port 5000`);
+    console.log(`Server is listen on port ${port}`);
 });
 
