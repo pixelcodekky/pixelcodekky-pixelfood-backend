@@ -32,4 +32,4 @@ export const validateMyRestaurantRequest = [
     body('menuItems.*.price').notEmpty().withMessage('Menu item price is must be number'),
     handleValidationErros,
 
-]
+] 
