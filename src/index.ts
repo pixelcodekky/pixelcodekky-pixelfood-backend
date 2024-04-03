@@ -5,6 +5,7 @@ import mongoose from 'mongoose';
 import myUserRoute from './routes/MyuserRoutes';
 import myRestaurantRoute from './routes/MyRestaurantRoutes';
 import RestaurantRoutes from './routes/RestaurantRoutes';
+import orderRoutes from './routes/OrderRoute';
 import {v2 as cloudinary} from 'cloudinary';
 
 mongoose.connect(process.env.MONGODB_CONNECTION_STRING as string).then(() =>{
@@ -18,10 +19,13 @@ cloudinary.config({
 });
 
 const app = express();
-app.use(express.json());
+
 app.use(cors());
 
 const port = process.env.PORT || 5000;
+
+app.use('/api/order/checkout/webhook', express.raw({type: '*/*'}));
+app.use(express.json());
 
 app.get("/hello", async (req: Request, res: Response) => {
     res.json({message: "Welcome from pixel soft api"});
@@ -31,6 +35,7 @@ app.get("/hello", async (req: Request, res: Response) => {
 app.use('/api/my/user', myUserRoute);
 app.use('/api/my/restaurant', myRestaurantRoute);
 app.use('/api/restaurant', RestaurantRoutes);
+app.use('/api/order', orderRoutes);
 
 app.listen(port, () => {
     console.log(`Server is listen on port ${port}`);
