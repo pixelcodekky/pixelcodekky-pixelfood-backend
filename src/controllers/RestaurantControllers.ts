@@ -1,5 +1,6 @@
 import {Request, Response} from 'express';
 import Restaurant from '../models/restaurant';
+import Order from '../models/order';
 
 const searchRestaurant = async (req: Request, res: Response) => {
     try {
@@ -78,6 +79,8 @@ const getRestaurant = async (req: Request, res: Response) => {
         res.status(500).json({message: 'Something went wrong',error: `${error}`});
     }
 }
+
+
 
 const deleteRestaurants = async (req: Request, res: Response) => {
     try {

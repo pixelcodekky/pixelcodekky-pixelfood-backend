@@ -40,8 +40,6 @@ export const jwtParse = async (req: Request, res: Response, next: NextFunction) 
         req.auth0Id = auth0Id as String;
         req.userId = user._id.toString();
 
-        console.log(req);
-
         next();
 
     } catch (error) {
