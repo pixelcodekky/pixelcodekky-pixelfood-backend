@@ -17,6 +17,8 @@ export const validateMyUserRequest = [
     body('addressLine1').isString().notEmpty().withMessage('Address must be a string and not empty'),
     body('city').isString().notEmpty().withMessage('city must be a string and not empty'),
     body('country').isString().notEmpty().withMessage('country must be a string and not empty'),
+    body('mobileNumber').isString().notEmpty().withMessage('mobile number should contain only numbers, less than 9'),
+    body('countryCode').isString().notEmpty().withMessage('country code is required'),
     handleValidationErros,
 ];
 
@@ -31,5 +33,11 @@ export const validateMyRestaurantRequest = [
     body('menuItems.*.name').notEmpty().withMessage('Menu item name is required'),
     body('menuItems.*.price').notEmpty().withMessage('Menu item price is must be number'),
     handleValidationErros,
-
 ] 
+
+export const validateMyAddressRequest = [
+    body('user').isString().notEmpty().withMessage('User id must be a string and not empty'),
+    body('addressName').isString().notEmpty().withMessage('address name not allow empty'),
+    body('postalcode').isFloat({min:5, max:6}).withMessage('Postal code must be numeric with  length between 5 to 6'),
+    handleValidationErros,
+]

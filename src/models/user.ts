@@ -20,8 +20,20 @@ const usreSchema = new mongoose.Schema({
     },
     country: {
         type: String
+    },
+    mobileNumber:{
+        type: Number,
+        require: true,
+    },
+    countryCode:{
+        type: String,
+        require: true,
+    },
+    isVerified :{
+        type: Boolean,  
+        default: false  // initially set to false for non verified users
     }
-});
+}, {timestamps: true});
 
 const User = mongoose.model("User", usreSchema);
 export default User;

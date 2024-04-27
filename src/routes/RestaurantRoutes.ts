@@ -15,7 +15,8 @@ param('restaurantId').isString().trim().notEmpty().withMessage(`RestaurantId par
 RestaurantControllers.getRestaurant);
 
 
-router.delete('/',RestaurantControllers.deleteRestaurants);
+router.delete('/staging/deletemany',RestaurantControllers.deleteRestaurants);
+router.put('/staging/updatebyname', RestaurantControllers.updateRestaurantName);
 
 export default router;
 

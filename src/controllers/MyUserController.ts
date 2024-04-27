@@ -28,6 +28,15 @@ const createUser = async (req: Request, res: Response) => {
             return res.status(409); // information already exist
         }
 
+        //manipulate phone number;
+        if(isContactNumber(req.body.countryCode,'country_code')){
+            return res.status(500).json({message: "Invalid country code"});
+        }
+
+        if(isContactNumber(req.body.phoneNumber,"phone_number")){
+            return res.status(500).json({message: "Invalid Phone Number."});
+        }
+
         const newUser = new User(req.body);
         await  newUser.save();
         return res.status(201).json(newUser.toObject());
@@ -41,7 +50,7 @@ const createUser = async (req: Request, res: Response) => {
 const updateUser = async (req:Request, res: Response) => {
     try {
         console.log(req.body);
-        const {name, addressLine1, country, city} = req.body;
+        const {name, addressLine1, country, city, countryCode, mobileNumber} = req.body;
 
         const user = await User.findById(req.userId);
 
@@ -53,6 +62,8 @@ const updateUser = async (req:Request, res: Response) => {
         user.addressLine1 = addressLine1;
         user.country = country;
         user.city= city;
+        user.countryCode = countryCode;
+        user.mobileNumber = mobileNumber;
 
         await user.save();
 
@@ -64,6 +75,22 @@ const updateUser = async (req:Request, res: Response) => {
     }
 }
 
+const isContactNumber = (value: string,type:string) => {
+    const regexCountryCode = /^\+\d{1,3}$/;
+    const regexPhoneNumber = /^[0-9]$/
+    let result = false;
+
+    switch(type){
+        case "country_code":
+            result = regexCountryCode.test(value);
+            break;
+        case "phone_number":
+            result = regexPhoneNumber.test(value); 
+            break;
+        
+    }
+    return result;
+}
 
 export default {
     getUser,

@@ -5,6 +5,7 @@ import mongoose from 'mongoose';
 import myUserRoute from './routes/MyuserRoutes';
 import myRestaurantRoute from './routes/MyRestaurantRoutes';
 import RestaurantRoutes from './routes/RestaurantRoutes';
+import myAddressRoutes from './routes/MyAddressRoutes';
 import orderRoutes from './routes/OrderRoute';
 import {v2 as cloudinary} from 'cloudinary';
 
@@ -36,6 +37,7 @@ app.use('/api/my/user', myUserRoute);
 app.use('/api/my/restaurant', myRestaurantRoute);
 app.use('/api/restaurant', RestaurantRoutes);
 app.use('/api/order', orderRoutes);
+app.use('/api/my/address', myAddressRoutes);
 
 app.listen(port, () => {
     console.log(`Server is listen on port ${port}`);
