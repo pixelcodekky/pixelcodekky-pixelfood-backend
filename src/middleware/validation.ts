@@ -41,3 +41,5 @@ export const validateMyAddressRequest = [
     body('postalcode').isFloat({min:5, max:6}).withMessage('Postal code must be numeric with  length between 5 to 6'),
     handleValidationErros,
 ]
+
+

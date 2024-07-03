@@ -13,6 +13,9 @@ const menuItemSchema = new mongoose.Schema({
     price:{
         type: Number,
         require: true,
+    },
+    imageUrl: {
+        type: String,
     }
 }, {timestamps: true});
 
@@ -51,7 +54,7 @@ const restaurantSchema = new mongoose.Schema({
     imageUrl: {
         type: String,
         required: true,
-    },
+    }
 }, { timestamps: true });
 
 const Restaurant = mongoose.model('Restaurant', restaurantSchema);

@@ -14,9 +14,10 @@ router.get('/:restaurantId',
 param('restaurantId').isString().trim().notEmpty().withMessage(`RestaurantId parameter must be valid string`),
 RestaurantControllers.getRestaurant);
 
-
+router.get('/staging/restaurant', RestaurantControllers.getRestaurant);
 router.delete('/staging/deletemany',RestaurantControllers.deleteRestaurants);
 router.put('/staging/updatebyname', RestaurantControllers.updateRestaurantName);
+router.get('/staging/updaterestaurant', RestaurantControllers.upadteRestaurantAddress);
 
 export default router;
 
