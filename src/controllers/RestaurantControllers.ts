@@ -1,8 +1,9 @@
 import mongoose from 'mongoose';
 import {Request, Response} from 'express';
 import Restaurant from '../models/restaurant';
-import { importAndRead } from '../common';
+import { calculateDistanceHelper, importAndRead, paginateResult } from '../common';
 import RestaurantAddress from '../models/restaurantaddress';
+import { RestaurantSearchResponse } from '../common/types';
 
 const searchRestaurant = async (req: Request, res: Response) => {
     try {
@@ -11,7 +12,9 @@ const searchRestaurant = async (req: Request, res: Response) => {
         const selectedCuisines = (req.query.selectedCuisines as string) || "";
         const sortOptions = (req.query.sortOption as string) || "updatedAt";
         const page: number = parseInt(req.query.page as string);
-
+        const latitude: number = parseFloat(req.query.latitude as string);
+        const longitude: number = parseFloat(req.query.longitude as string);
+        
         let query: any = {};
 
         var pipeline: any = [
@@ -65,26 +68,28 @@ const searchRestaurant = async (req: Request, res: Response) => {
             },
         );
 
-        if(page === 0){
-            //find all restaurant with query.
-            //restaurants = await Restaurant.find(query).sort({[sortOptions]: 1});
-            restaurants = await Restaurant.aggregate(pipeline);
-        }else{
-            pipeline.push(
-                {
-                    $skip: skip
-                },
-                {
-                    $limit: pageSize
-                }
-            );
-            //restaurants = await Restaurant.find(query).sort({[sortOptions]: 1}).skip(skip).limit(pageSize).lean();
-            restaurants = await Restaurant.aggregate(pipeline);
-        }
+        // if(page === 0){
+        //     //find all restaurant with query.
+        //     //restaurants = await Restaurant.find(query).sort({[sortOptions]: 1});
+        //     restaurants = await Restaurant.aggregate(pipeline);
+        // }else{
+        //     // pipeline.push(
+        //     //     {
+        //     //         $skip: skip
+        //     //     },
+        //     //     {
+        //     //         $limit: pageSize
+        //     //     }
+        //     // );
+        //     //restaurants = await Restaurant.find(query).sort({[sortOptions]: 1}).skip(skip).limit(pageSize).lean();
+        //     restaurants = await Restaurant.aggregate(pipeline);
+        // }
+
+        restaurants = await Restaurant.aggregate(pipeline);
         
         const total = await Restaurant.countDocuments(query);
 
-        const response = {
+        let response: RestaurantSearchResponse = {
             data: restaurants,
             pagination: {
                 total,
@@ -93,7 +98,23 @@ const searchRestaurant = async (req: Request, res: Response) => {
             }
         }
 
-        res.json(response);
+        let coordinates = {
+            lat: latitude,
+            lng: longitude,
+        }
+
+        let result = calculateDistanceHelper(response, coordinates);
+
+        if(sortOptions === 'distance'){
+            //sort by distance
+            result = {...result, data: [...result.data].sort((a, b) => (a.distance || 0) - (b.distance || 0))};
+        }
+
+        //skip and pageSize
+        if(page > 0){
+            result = {...result, data: paginateResult(result, pageSize)}
+        }
+        res.json(result);
 
     } catch (error) {
         console.log(error);
