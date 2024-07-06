@@ -142,7 +142,7 @@ const getRestaurant = async (req: Request, res: Response) => {
                 },
             },
         ]);
-        console.log('before', combieData);
+
         if(!combieData){
             return res.status(404).json({message: 'Restaurant not found.'});
         }
