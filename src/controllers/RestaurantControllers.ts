@@ -111,7 +111,7 @@ const searchRestaurant = async (req: Request, res: Response) => {
         }
 
         //skip and pageSize
-        if(page > 0){
+        if(page > 0 && result.data.length > pageSize){
             result = {...result, data: paginateResult(result, pageSize)}
         }
         res.json(result);
