@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import {Request, Response} from 'express';
 import Restaurant from '../models/restaurant';
-import { calculateDistanceHelper, importAndRead, paginateResult } from '../common';
+import { cacluateRestaurantDistanceHelper, calculateDistanceHelper, importAndRead, paginateResult } from '../common';
 import RestaurantAddress from '../models/restaurantaddress';
 import { RestaurantSearchResponse } from '../common/types';
 
@@ -117,7 +117,6 @@ const searchRestaurant = async (req: Request, res: Response) => {
         res.json(result);
 
     } catch (error) {
-        console.log(error);
         res.status(500).json({message: 'Something went wrong'});
     }
 }
@@ -125,9 +124,11 @@ const searchRestaurant = async (req: Request, res: Response) => {
 const getRestaurant = async (req: Request, res: Response) => {
     try {
         const restaurantId = req.params.restaurantId;
+        const latitude: number = parseFloat(req.query.latitude as string);
+        const longitude: number = parseFloat(req.query.longitude as string);
         //const restaurant = await Restaurant.findById(restaurantId);
-        console.log('parameter', restaurantId);
-        const combieData = await Restaurant.aggregate([
+        
+        let combieData = await Restaurant.aggregate([
             {
                 $match: {
                     _id: { $eq: new mongoose.Types.ObjectId(`${restaurantId}`) },
@@ -143,14 +144,20 @@ const getRestaurant = async (req: Request, res: Response) => {
             },
         ]);
 
-        if(!combieData){
+        //calculate distance
+        let coordinates = {
+            lat: latitude,
+            lng: longitude,
+        }
+        let result = cacluateRestaurantDistanceHelper(combieData[0], coordinates);
+
+        if(!result){
             return res.status(404).json({message: 'Restaurant not found.'});
         }
         
-        return res.json(combieData[0]);
+        return res.json(result);
 
     } catch (error) {
-        console.log(error);
         return res.status(500).json({message: 'Something went wrong',error: `${error}`});
     }
 }

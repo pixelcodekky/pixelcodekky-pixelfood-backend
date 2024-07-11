@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { Coordinates, RestaurantSearchResponse } from './types';
+import { Coordinates, Restaurant, RestaurantSearchResponse } from './types';
 
 export interface GeocoderCustomData {
     display_name: string;
@@ -85,6 +85,19 @@ export const haversineDistance = (pointAlonlat:[number, number], pointBlonlat:[n
     const c =   2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
     return R * c; // Distance in kilometer
+}
+
+export const cacluateRestaurantDistanceHelper = (payload: any, profile: Coordinates ): Restaurant => {
+    
+    if(payload.address[0] !== undefined){
+        let pointA: [number, number] = [profile.lng, profile.lat];
+        let pointB: [number, number] = [parseFloat(payload['address'][0]['lon'] as string), parseFloat(payload['address'][0]['lat'])];
+
+        let distance = haversineDistance(pointA, pointB);
+        payload.distance = distance;
+    }
+    
+    return payload;
 }
 
 export const calculateDistanceHelper = (payload: RestaurantSearchResponse, profile: Coordinates): RestaurantSearchResponse => {
