@@ -34,13 +34,16 @@ const orderSchema = new mongoose.Schema({
             menuItemId: {type: String, require: true},
             quantity: {type: Number, require: true},
             name: {type: String, require: true},
+            price: {type: Number, require: true},
         },
     ],
     totalAmount: Number,
     status: {
         type: String,
         enum: ["placed","paid","inProgress","outForDelivery","delivered"],
-    }
+    },
+    gst:{type:Number, require: true},
+    deliveryfee:{type:Number, require:false},
 }, { timestamps: true});
 
 const Order = mongoose.model("Order", orderSchema);

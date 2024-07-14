@@ -4,18 +4,18 @@ import 'dotenv/config';
 import Restaurant, { MenuItemType } from '../models/restaurant';
 import Order from '../models/order';
 
-
-
 const STRIPE = new Stripe(process.env.STRIPE_API_KEY as string);
 
 const FRONTEND_URL = process.env.FRONTEND_URL as string;
 const STRIPE_ENDPOINT_SECRET = process.env.STRIPE_WEBHOOK_SECRET as string;
+const STRIPE_CURRENCY = process.env.STRIPE_CURRENCY as string
 
 type checkOutSessionRequest = {
     cartItems: {
         menuItemId: string;
         name: string;
         quantity: string;
+        price: number;
     }[];
     deliveryDetails: {
         email:string;
@@ -24,6 +24,8 @@ type checkOutSessionRequest = {
         city:string;
     };
     restaurantId: string;
+    gst:number;
+    deliveryfee:number;
 }
 
 const getMyOrders = async (req: Request, res: Response) => {
@@ -67,7 +69,7 @@ const stripeWebhookHandler = async (req: Request, res: Response) => {
 const createCheckoutSession = async (req: Request, res: Response) => {
     try {
         //console.log('createCheckoutSession',req.body)
-        const checkoutSessionRequest: checkOutSessionRequest = req.body;
+        let checkoutSessionRequest: checkOutSessionRequest = req.body;
         const restaurant = await Restaurant.findById(
             checkoutSessionRequest.restaurantId
         );
@@ -76,12 +78,31 @@ const createCheckoutSession = async (req: Request, res: Response) => {
             throw new Error(`Restaurant not found`);
         }
 
+        //update price for future reference
+        let menuitems = [...restaurant.menuItems];
+        const updatedCardItems = checkoutSessionRequest.cartItems.map((cartItem) => {
+            let menu = menuitems.find((x) => x._id.toString() === cartItem.menuItemId);
+            if(menu){
+                return {
+                    ...cartItem,
+                    price: menu.price ? parseFloat((menu.price / 100).toFixed(2)) : 0
+                }
+            }
+        });
+
+        const updatedcheckoutSessionRequest = {
+            ...checkoutSessionRequest,
+            cartItems: updatedCardItems
+        }
+
         const newOrder = new Order({
             restaurant: restaurant,
             user: req.userId,
             status: 'placed',
+            gst: checkoutSessionRequest.gst,
+            deliveryfee: checkoutSessionRequest.deliveryfee,
             deliveryDetails: checkoutSessionRequest.deliveryDetails,
-            cartItems: checkoutSessionRequest.cartItems,
+            cartItems: updatedcheckoutSessionRequest.cartItems, //checkoutSessionRequest.cartItems,
         });
 
         const lineItems = createLineItems(checkoutSessionRequest, restaurant.menuItems);
@@ -91,11 +112,12 @@ const createCheckoutSession = async (req: Request, res: Response) => {
         if(!session.url){
             return res.status(500).json({message: "error creating stripe session"});
         }
-
+        console.log('before', newOrder);
         await newOrder.save();
-
+        console.log('after', newOrder);
         res.json({url: session.url});
     } catch (error: any) {
+        console.log(error.message);
         res.status(500).json({ message: error });
     }
 }
@@ -110,7 +132,7 @@ const createLineItems = (checkoutSessionRequest: checkOutSessionRequest, menuIte
 
         const line_item: Stripe.Checkout.SessionCreateParams.LineItem = {
             price_data: {
-                currency: "gbp",
+                currency: STRIPE_CURRENCY || "gbp",
                 unit_amount: menuItem.price || 0,
                 product_data: {
                     name: menuItem.name || "",
@@ -134,7 +156,7 @@ const createSession = async (lineItems: Stripe.Checkout.SessionCreateParams.Line
                     type:"fixed_amount",
                     fixed_amount: {
                         amount: deliveryPrice,
-                        currency: "gbp",
+                        currency: STRIPE_CURRENCY || "gbp",
                     }
                 }
             }
