@@ -68,7 +68,6 @@ const stripeWebhookHandler = async (req: Request, res: Response) => {
 
 const createCheckoutSession = async (req: Request, res: Response) => {
     try {
-        //console.log('createCheckoutSession',req.body)
         let checkoutSessionRequest: checkOutSessionRequest = req.body;
         const restaurant = await Restaurant.findById(
             checkoutSessionRequest.restaurantId
@@ -106,15 +105,18 @@ const createCheckoutSession = async (req: Request, res: Response) => {
         });
 
         const lineItems = createLineItems(checkoutSessionRequest, restaurant.menuItems);
+        const gstLineItem = createGSTLineItems(lineItems, checkoutSessionRequest.gst, checkoutSessionRequest.deliveryfee);
 
-        const session = await createSession(lineItems, newOrder._id.toString(), restaurant.deliveryPrice, restaurant._id.toString());
+        const updatedLineItems = [...lineItems, gstLineItem];
+
+        const session = await createSession(updatedLineItems, newOrder._id.toString(), restaurant.deliveryPrice, restaurant._id.toString());
 
         if(!session.url){
             return res.status(500).json({message: "error creating stripe session"});
         }
-        console.log('before', newOrder);
+
         await newOrder.save();
-        console.log('after', newOrder);
+
         res.json({url: session.url});
     } catch (error: any) {
         console.log(error.message);
@@ -144,6 +146,29 @@ const createLineItems = (checkoutSessionRequest: checkOutSessionRequest, menuIte
     });
 
     return lineItems;
+}
+
+const createGSTLineItems = (lineItems: Stripe.Checkout.SessionCreateParams.LineItem[], gst: number, deliveryfee: number) => {
+    const subTotal = lineItems.reduce((total, item) => total + (item.price_data?.unit_amount ?? 0) * (item.quantity ?? 1), 0);
+
+    const totalwithDelivery = subTotal + deliveryfee;
+
+    const exclGST = (parseFloat((totalwithDelivery / 100).toFixed(2)) * gst) / (100);
+
+    const unitAmount = parseFloat(exclGST.toFixed(2)) * 100;
+
+    const gstLineItem: Stripe.Checkout.SessionCreateParams.LineItem = {
+        price_data: {
+            currency: STRIPE_CURRENCY || "gbp",
+            product_data: {
+                name: `GST ${gst}%`,
+            },
+            unit_amount: unitAmount,
+        },
+        quantity: 1,
+    };
+
+    return gstLineItem;
 }
 
 const createSession = async (lineItems: Stripe.Checkout.SessionCreateParams.LineItem[], orderId: string, deliveryPrice: number, restaurantId: string) => {
