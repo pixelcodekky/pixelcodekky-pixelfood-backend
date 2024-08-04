@@ -46,20 +46,39 @@ const stripeWebhookHandler = async (req: Request, res: Response) => {
     try {
         const sig = req.headers['stripe-signature'];
         event = await STRIPE.webhooks.constructEvent(req.body, sig as string, STRIPE_ENDPOINT_SECRET);
-
+        console.log(event);
     } catch (error: any) {
         console.log(error)
         return res.status(400).send(`Webhook Error: ${error.message}`);
     }
 
     if(event?.type === 'checkout.session.completed'){
-        const order = await Order.findById(event.data.object.metadata?.orderId);
-        if(!order){
-            return res.status(404).json({message: 'Order not found'});
+        let eventresult = await handleCheckoutSessionCompleted(event);        
+        if(!eventresult?.status){
+            return res.status(404).json({message: eventresult?.message});
         }
+    }else if(event?.type === 'checkout.session.expired'){
+        let eventresult = await handleCheckoutSessionExpired(event);
+        if(!eventresult?.status){
+            return res.status(404).json({message: eventresult?.message});
+        }
+    }else if(event?.type === 'charge.succeeded'){
+        //save to log for this transaction
+        
+    }else if(event.type === 'charge.failed'){
+        //save to log for this transaction
+    }
 
-        console.log(event.data.object.payment_intent); //for refund or dispute, use payment_intent id to lookup object
-        console.log(event.data.object.client_reference_id);
+    res.status(200).send();
+}
+
+const handleCheckoutSessionCompleted = async (event: Stripe.CheckoutSessionCompletedEvent) => {
+    try {
+        const order = await Order.findById(event.data.object.metadata?.orderId);
+        
+        if(!order){
+            return {status: false, message: 'Order not found'}
+        }
 
         order.totalAmount = event.data.object.amount_total;
         order.status = "paid";
@@ -67,10 +86,48 @@ const stripeWebhookHandler = async (req: Request, res: Response) => {
         order.payment_intent = event.data.object.payment_intent?.toString(); //for refund or dispute, use payment_intent id to lookup object
 
         await order.save();
-    }
 
-    res.status(200).send();
+        return {status: true, message: "Order payment Updated."}
+    } catch (error) {
+        console.log(error);
+        return {status: false, message: error}
+    }
 }
+
+const handleCheckoutSessionExpired = async (event: Stripe.CheckoutSessionExpiredEvent) => {
+    //update Order
+    try {
+
+        const order = await Order.findById(event.data.object.metadata?.orderId);
+        
+        if(!order){
+            return {status: false, message: 'Order not found'}
+        }
+
+        order.payment_status = event.data.object.payment_status;
+        order.payment_intent = event.data.object.payment_intent?.toString(); //for refund or dispute, use
+        
+        await order.save();
+        return {status: false, message: "Checkout session expired."}
+    } catch (error) {
+        return {status: false, message: error};
+    }
+}
+
+const handleChargeSucceeded = async (event: Stripe.ChargeSucceededEvent) => {
+    //save to log for this transaction
+    //event.data.object.payment_method_details?.card?.network; // Visa, Master, AmericanExpress
+    //event.data.object.payment_method_details?.card?.last4; // last 4 digit of card
+    //event.data.object.receipt_url // to check receipt from stripe
+    //event.data.object.payment_intent // to track for payment intent history.
+}
+
+const handleChargeFailed = async (event: Stripe.ChargeFailedEvent) => {
+    //event.data.object.failure_code // get card faliure code
+    //event.data.object.failure_message // error message
+}
+
+
 
 const createCheckoutSession = async (req: Request, res: Response) => {
     try {
@@ -90,7 +147,7 @@ const createCheckoutSession = async (req: Request, res: Response) => {
             if(menu){
                 return {
                     ...cartItem,
-                    price: menu.price ? parseFloat((menu.price / 100).toFixed(2)) : 0
+                    price: menu.price ? menu.price : 0
                 }
             }
         });
@@ -100,6 +157,7 @@ const createCheckoutSession = async (req: Request, res: Response) => {
             cartItems: updatedCardItems
         }
 
+        const uuid = generateuuid();
         const newOrder = new Order({
             restaurant: restaurant,
             user: req.userId,
@@ -108,6 +166,7 @@ const createCheckoutSession = async (req: Request, res: Response) => {
             deliveryfee: checkoutSessionRequest.deliveryfee,
             deliveryDetails: checkoutSessionRequest.deliveryDetails,
             cartItems: updatedcheckoutSessionRequest.cartItems, //checkoutSessionRequest.cartItems,
+            reference_id: `${uuid}-${Date.now()}`,
         });
 
         const taxRateID = ""; //await createTaxRate();
@@ -124,6 +183,8 @@ const createCheckoutSession = async (req: Request, res: Response) => {
         }
 
         await newOrder.save();
+
+        const expiredtime = session.expires_at;
 
         res.json({url: session.url});
     } catch (error: any) {
@@ -215,7 +276,6 @@ const createDeliveryLineItem = (deliveryfee: number, taxRateID: string) => {
 }
 
 const createSession = async (lineItems: Stripe.Checkout.SessionCreateParams.LineItem[], orderId: string, deliveryPrice: number, restaurantId: string, taxRateID: string) => {
-    const uuid = generateuuid();
 
     const sessionData = await STRIPE.checkout.sessions.create({
         line_items: lineItems,
@@ -242,7 +302,6 @@ const createSession = async (lineItems: Stripe.Checkout.SessionCreateParams.Line
         },
         success_url: `${FRONTEND_URL}/order_status`,
         cancel_url: `${FRONTEND_URL}/detail/${restaurantId}`,
-        client_reference_id: `${uuid}-${Date.now()}`,
     });
 
     // const sessionData = await STRIPE.checkout.sessions.create({
@@ -259,6 +318,8 @@ const createSession = async (lineItems: Stripe.Checkout.SessionCreateParams.Line
 
     return sessionData;
 }
+
+
 
 export default {
     createCheckoutSession,

@@ -9,8 +9,16 @@ import myAddressRoutes from './routes/MyAddressRoutes';
 import orderRoutes from './routes/OrderRoute';
 import {v2 as cloudinary} from 'cloudinary';
 
-mongoose.connect(process.env.MONGODB_CONNECTION_STRING as string).then(() =>{
+const mongodburl = process.env.MONGODB_CONNECTION_STRING as string; 
+
+mongoose.connect(mongodburl).then(() =>{
     console.log(`Mongo DB Service Connected.`);
+}).catch((error) => {
+    if(error.name === 'MongoNetworkError'){
+        console.error(`Network Error, make sure network setting are correct`);
+    }
+    console.error(`Mongo DB Service Not Connected. ${error}`);
+    process.exit(1);
 });
 
 cloudinary.config({

@@ -46,7 +46,7 @@ const orderSchema = new mongoose.Schema({
     deliveryfee:{type:Number, require:false},
     payment_status: {type: String, require: false},
     payment_intent: {type: String, require:false},
-    client_reference_id: {type: String, require:false},
+    reference_id: {type: String, require:false},
 }, { timestamps: true});
 
 const Order = mongoose.model("Order", orderSchema);

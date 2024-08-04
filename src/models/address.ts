@@ -14,14 +14,20 @@ const addressSchema = new mongoose.Schema({
         type: String,
         require: false
     },
+    unitNumber: {
+        type: String,
+        require: false
+    },
     deliveryInstruction: {
         type: String,
         require: false
     },
     postalcode: {
         type: Number,
-        require: true
+        require: false
     },
+    lon: {type: Number, require: true},
+    lat: {type: Number, require: true},
     isDefault:{
         type: Boolean,
         require: false
@@ -29,6 +35,10 @@ const addressSchema = new mongoose.Schema({
     addressName:{
         type: String,
         require: true
+    },
+    fullName:{
+        type: String,
+        require: true,
     }
 },{timestamps: true});
 

@@ -38,6 +38,9 @@ const createUser = async (req: Request, res: Response) => {
         }
 
         const newUser = new User(req.body);
+        newUser.name = req.body.name || req.body.email;
+        newUser.countryCode = req.body.countryCode || 'NA';
+
         await  newUser.save();
         return res.status(201).json(newUser.toObject());
 
@@ -49,7 +52,6 @@ const createUser = async (req: Request, res: Response) => {
 
 const updateUser = async (req:Request, res: Response) => {
     try {
-        console.log(req.body);
         const {name, addressLine1, country, city, countryCode, mobileNumber} = req.body;
 
         const user = await User.findById(req.userId);
