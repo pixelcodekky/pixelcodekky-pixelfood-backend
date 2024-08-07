@@ -48,6 +48,14 @@ const orderSchema = new mongoose.Schema({
             type:String,
             require:true,
         },
+        lat:{
+            type:Number,
+            require:true,
+        },
+        lng:{
+            type:Number,
+            require:true,
+        },
     },
     cartItems:[
         {
