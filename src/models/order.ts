@@ -20,13 +20,33 @@ const orderSchema = new mongoose.Schema({
             type: String, 
             required: true,
         },
-        addressLine1:{
-            type: String, 
+        mobileNumber:{
+            type:Number,
+            require: true,
+        },
+        countryCode:{
+            type:String,
             required: true,
         },
-        city:{
-            type: String, 
-            required: true,
+        buildingName:{
+            type:String,
+            require:false,
+        },
+        floor:{
+            type:String,
+            require:false,
+        },
+        unitNumber:{
+            type:String,
+            require:false,
+        },
+        deliveryInstruction:{
+            type:String,
+            require:true,
+        },
+        fullName:{
+            type:String,
+            require:true,
         },
     },
     cartItems:[
