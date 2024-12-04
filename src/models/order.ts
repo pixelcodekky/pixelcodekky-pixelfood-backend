@@ -75,6 +75,11 @@ const orderSchema = new mongoose.Schema({
     payment_status: {type: String, require: false},
     payment_intent: {type: String, require:false},
     reference_id: {type: String, require:false},
+    charge_id: {type:String, require:false},
+    refunded: {type:Boolean, require:false},
+    receipt_url: {type:String,require:false},
+    faliure_code: {type:String, require:false},
+    faliure_message: {type:String, require:false},
 }, { timestamps: true});
 
 const Order = mongoose.model("Order", orderSchema);

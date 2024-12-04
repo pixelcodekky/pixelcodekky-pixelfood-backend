@@ -7,7 +7,10 @@ import myRestaurantRoute from './routes/MyRestaurantRoutes';
 import RestaurantRoutes from './routes/RestaurantRoutes';
 import myAddressRoutes from './routes/MyAddressRoutes';
 import orderRoutes from './routes/OrderRoute';
+import geocodingRoutes from './routes/GeocodingRoutes';
 import {v2 as cloudinary} from 'cloudinary';
+
+require('dotenv').config();
 
 const mongodburl = process.env.MONGODB_CONNECTION_STRING as string; 
 
@@ -46,6 +49,7 @@ app.use('/api/my/restaurant', myRestaurantRoute);
 app.use('/api/restaurant', RestaurantRoutes);
 app.use('/api/order', orderRoutes);
 app.use('/api/my/address', myAddressRoutes);
+app.use('/api/geocoder', geocodingRoutes);
 
 app.listen(port, () => {
     console.log(`Server is listen on port ${port}`);

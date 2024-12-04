@@ -64,6 +64,7 @@ const stripeWebhookHandler = async (req: Request, res: Response) => {
         }
     }else if(event?.type === 'charge.succeeded'){
         //save to log for this transaction
+        let eventresult = await handleChargeSucceeded(event);
         
     }else if(event.type === 'charge.failed'){
         //save to log for this transaction
@@ -105,7 +106,7 @@ const handleCheckoutSessionExpired = async (event: Stripe.CheckoutSessionExpired
         }
 
         order.payment_status = event.data.object.payment_status;
-        order.payment_intent = event.data.object.payment_intent?.toString(); //for refund or dispute, use
+        order.payment_intent = event.data.object.payment_intent?.toString(); 
         
         await order.save();
         return {status: false, message: "Checkout session expired."}
@@ -120,11 +121,48 @@ const handleChargeSucceeded = async (event: Stripe.ChargeSucceededEvent) => {
     //event.data.object.payment_method_details?.card?.last4; // last 4 digit of card
     //event.data.object.receipt_url // to check receipt from stripe
     //event.data.object.payment_intent // to track for payment intent history.
+    
+    //update Charge Id
+    try {
+        const order = await Order.findById(event.data.object.metadata?.orderId);
+        
+        if(!order){
+            return {status: false, message: 'Order not found'}
+        }
+
+        order.charge_id = event.data.object.id; //for refund or dispute, use
+        order.refunded = event.data.object.refunded;
+        order.receipt_url = event.data.object.receipt_url;
+
+        await order.save();
+        return {status: true, message: "Charge Successful"}
+
+    } catch (error) {
+        return {status: false, message: error};
+    }
 }
 
 const handleChargeFailed = async (event: Stripe.ChargeFailedEvent) => {
     //event.data.object.failure_code // get card faliure code
     //event.data.object.failure_message // error message
+    //update Charge Id
+    try {
+        const order = await Order.findById(event.data.object.metadata?.orderId);
+        
+        if(!order){
+            return {status: false, message: 'Order not found'}
+        }
+
+        order.faliure_code = event.data.object.failure_code
+        order.faliure_message = event.data.object.failure_message
+        order.charge_id = event.data.object.id;
+
+        await order.save();
+        return {status: false, message: "Charge Failed"}
+
+    } catch (error) {
+        return {status: false, message: error};
+    }
 }
 
 
