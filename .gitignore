@@ -1,8 +1,44 @@
-#Environment
+# Environment variables
 .env
+.env.*
 
-#complie
-dist/
-
-#packages
+# Dependencies
 node_modules/
+
+# Build output
+dist/
+build/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids/
+*.pid
+*.pid.lock
+
+# Coverage reports
+coverage/
+
+# TypeScript
+*.tsbuildinfo
+
+# IDEs
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+
+# Optional: local database files
+*.sqlite
+*.db

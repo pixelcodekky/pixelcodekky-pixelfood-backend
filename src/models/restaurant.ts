@@ -57,6 +57,16 @@ const restaurantSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
+restaurantSchema.virtual('address', {
+    ref: 'RestaurantAddress',
+    localField: '_id',
+    foreignField: 'restaurant',
+    justOne: true,
+});
+
+restaurantSchema.set('toJSON', { virtuals: true });
+restaurantSchema.set('toObject', { virtuals: true });
+
 const Restaurant = mongoose.model('Restaurant', restaurantSchema);
 export default Restaurant;
 

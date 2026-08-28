@@ -32,7 +32,7 @@ type checkOutSessionRequest = {
 
 const getMyOrders = async (req: Request, res: Response) => {
     try {
-        const orders = await Order.find({user: req.userId}).sort({createdAt: -1}).populate('restaurant').populate('user');
+        const orders = await Order.find({user: req.userId}).sort({createdAt: -1}).populate({ path: 'restaurant', populate: { path: 'address' } }).populate('user');
         
         res.json(orders);
 
