@@ -142,6 +142,11 @@ const getRestaurant = async (req: Request, res: Response) => {
                     as: 'address'
                 },
             },
+            {
+                $addFields: {
+                    address: { $arrayElemAt: ['$address', 0] }
+                }
+            },
         ]);
 
         //calculate distance
