@@ -338,7 +338,7 @@ const createSession = async (lineItems: Stripe.Checkout.SessionCreateParams.Line
         metadata: {
             orderId, restaurantId,
         },
-        success_url: `${FRONTEND_URL}/order_status`,
+        success_url: `${FRONTEND_URL}/order/${orderId}/track`,
         cancel_url: `${FRONTEND_URL}/detail/${restaurantId}`,
     });
 
