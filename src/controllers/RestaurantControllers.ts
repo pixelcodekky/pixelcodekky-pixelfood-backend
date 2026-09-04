@@ -24,6 +24,12 @@ const searchRestaurant = async (req: Request, res: Response) => {
                     localField: '_id',
                     foreignField: 'restaurant',
                     as: 'address' 
+                },
+                
+            },
+            {
+                $addFields: {
+                    address: { $arrayElemAt: ['$address', 0] }
                 }
             },
         ];
