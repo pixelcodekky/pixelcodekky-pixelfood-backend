@@ -114,10 +114,11 @@ export const calculateDistanceHelper = (payload: RestaurantSearchResponse, profi
     if(payload.data.length === 0) return results;
     
     let pointA: [number, number] = [profile.lng, profile.lat];
+    
     for(let restaurant of payload.data){
         let tmp = {...restaurant};
-        if(tmp.address[0] !== undefined){
-            let pointB: [number, number] = [tmp.address[0].lon, tmp.address[0].lat];
+        if(tmp.address !== undefined){
+            let pointB: [number, number] = [tmp.address.lon, tmp.address.lat];
             let distance = haversineDistance(pointA, pointB);
             restaurant.distance = distance;
             results.data.push(restaurant);

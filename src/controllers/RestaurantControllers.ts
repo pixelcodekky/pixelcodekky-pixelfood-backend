@@ -25,14 +25,16 @@ const searchRestaurant = async (req: Request, res: Response) => {
                     foreignField: 'restaurant',
                     as: 'address' 
                 },
-                
+            
             },
-            {
-                $addFields: {
-                    address: { $arrayElemAt: ['$address', 0] }
-                }
-            },
+            
         ];
+
+        // pipeline.push({
+        //     $addFields: {
+        //         address: { $arrayElemAt: ['$address', 0] }
+        //     },
+        // });
 
         query['country'] = new RegExp(city, "i");
         const checkCity = await Restaurant.countDocuments(query);
@@ -72,6 +74,11 @@ const searchRestaurant = async (req: Request, res: Response) => {
             {
                 $sort: {[sortOptions] : 1}
             },
+            {
+                $addFields: {
+                    address: { $arrayElemAt: ['$address', 0] }
+                },
+            }
         );
 
         // if(page === 0){
@@ -123,6 +130,7 @@ const searchRestaurant = async (req: Request, res: Response) => {
         res.json(result);
 
     } catch (error) {
+        console.log(error);
         res.status(500).json({message: 'Something went wrong'});
     }
 }
@@ -169,6 +177,7 @@ const getRestaurant = async (req: Request, res: Response) => {
         return res.json(result);
 
     } catch (error) {
+        console.log(error);
         return res.status(500).json({message: 'Something went wrong',error: `${error}`});
     }
 }

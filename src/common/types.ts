@@ -23,7 +23,7 @@ export type Restaurant = {
     cuisines: string[];
     menuItems: MenuItem[];
     imageUrl: string;
-    address: [{
+    address: {
         display_name: string;
         name: string;
         lat: number;
@@ -32,7 +32,7 @@ export type Restaurant = {
         country: string;
         country_code: string;
         postcode: string;
-    }],
+    },
     distance?:number,
 }
 
