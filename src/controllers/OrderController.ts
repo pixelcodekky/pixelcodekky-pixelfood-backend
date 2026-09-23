@@ -67,7 +67,12 @@ const stripeWebhookHandler = async (req: Request, res: Response) => {
         let eventresult = await handleChargeSucceeded(event);
         
     }else if(event.type === 'charge.failed'){
-        //save to log for this transaction
+        let eventresult = await handleChargeFailed(event as Stripe.ChargeFailedEvent);
+    }else if(event.type === 'charge.refunded'){
+        let eventresult = await handleChargeRefunded(event as Stripe.ChargeRefundedEvent);
+        if(!eventresult?.status){
+            return res.status(404).json({message: eventresult?.message});
+        }
     }
 
     res.status(200).send();
@@ -359,8 +364,89 @@ const createSession = async (lineItems: Stripe.Checkout.SessionCreateParams.Line
 
 
 
+const handleChargeRefunded = async (event: Stripe.ChargeRefundedEvent) => {
+    try {
+        const order = await Order.findOne({ charge_id: event.data.object.id });
+
+        if(!order){
+            return {status: false, message: 'Order not found'}
+        }
+
+        const latestRefund = event.data.object.refunds?.data?.[0];
+
+        order.refunded = event.data.object.refunded;
+        order.status = "refunded";
+        if(latestRefund){
+            order.refund_id = latestRefund.id;
+            order.refund_amount = latestRefund.amount;
+            order.refund_reason = latestRefund.reason ?? undefined;
+        }
+
+        await order.save();
+        return {status: true, message: "Charge refunded."}
+    } catch (error) {
+        return {status: false, message: error};
+    }
+}
+
+const refundOrder = async (req: Request, res: Response) => {
+    try {
+        const { orderId } = req.params;
+        const { reason } = req.body as { reason?: Stripe.RefundCreateParams.Reason };
+
+        const order = await Order.findById(orderId);
+
+        if(!order){
+            return res.status(404).json({message: "Order not found"});
+        }
+
+        if(order.user.toString() !== req.userId){
+            return res.status(403).json({message: "Unauthorized"});
+        }
+
+        const refundableStatuses = ["paid", "inProgress", "outForDelivery"];
+        if(!refundableStatuses.includes(order.status as string)){
+            return res.status(400).json({message: `Order cannot be refunded in status: ${order.status}`});
+        }
+
+        if(!order.charge_id){
+            return res.status(400).json({message: "No charge found for this order"});
+        }
+
+        const refundParams: Stripe.RefundCreateParams = {
+            charge: order.charge_id,
+        };
+        if(reason) refundParams.reason = reason;
+
+        const refund = await STRIPE.refunds.create(refundParams);
+
+        if(refund.status === 'failed'){
+            return res.status(500).json({message: "Refund failed", refund_id: refund.id});
+        }
+
+        order.refunded = true;
+        order.status = "refunded";
+        order.refund_id = refund.id;
+        order.refund_amount = refund.amount;
+        order.refund_reason = refund.reason ?? undefined;
+
+        await order.save();
+
+        res.json({
+            message: "Refund initiated successfully",
+            refund_id: refund.id,
+            refund_status: refund.status,
+            refund_amount: refund.amount,
+        });
+    } catch (error: any) {
+        console.log(error);
+        res.status(500).json({message: error?.message ?? "Refund failed"});
+    }
+}
+
 export default {
     createCheckoutSession,
     stripeWebhookHandler,
-    getMyOrders
+    getMyOrders,
+    refundOrder,
 }

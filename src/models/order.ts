@@ -68,7 +68,7 @@ const orderSchema = new mongoose.Schema({
     totalAmount: Number,
     status: {
         type: String,
-        enum: ["placed","paid","inProgress","outForDelivery","delivered"],
+        enum: ["placed","paid","inProgress","outForDelivery","delivered","refunded"],
     },
     gst:{type:Number, require: true},
     deliveryfee:{type:Number, require:false},
@@ -77,6 +77,9 @@ const orderSchema = new mongoose.Schema({
     reference_id: {type: String, require:false},
     charge_id: {type:String, require:false},
     refunded: {type:Boolean, require:false},
+    refund_id: {type:String, require:false},
+    refund_amount: {type:Number, require:false},
+    refund_reason: {type:String, require:false},
     receipt_url: {type:String,require:false},
     faliure_code: {type:String, require:false},
     faliure_message: {type:String, require:false},
