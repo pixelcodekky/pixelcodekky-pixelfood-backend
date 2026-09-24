@@ -46,13 +46,15 @@ const stripeWebhookHandler = async (req: Request, res: Response) => {
     try {
         const sig = req.headers['stripe-signature'];
         event = await STRIPE.webhooks.constructEvent(req.body, sig as string, STRIPE_ENDPOINT_SECRET);
-        console.log(event);
+        //console.log(event);
+
     } catch (error: any) {
         console.log(error)
         return res.status(400).send(`Webhook Error: ${error.message}`);
     }
 
     if(event?.type === 'checkout.session.completed'){
+        console.log('Checkout session completed event received');
         let eventresult = await handleCheckoutSessionCompleted(event);        
         if(!eventresult?.status){
             return res.status(404).json({message: eventresult?.message});
@@ -63,6 +65,7 @@ const stripeWebhookHandler = async (req: Request, res: Response) => {
             return res.status(404).json({message: eventresult?.message});
         }
     }else if(event?.type === 'charge.succeeded'){
+        console.log('Charge succeeded event received');
         //save to log for this transaction
         let eventresult = await handleChargeSucceeded(event);
         
