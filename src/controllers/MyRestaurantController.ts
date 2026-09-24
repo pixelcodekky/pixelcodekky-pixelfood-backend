@@ -58,13 +58,26 @@ const updateRestaurant = async (req: Request, res: Response) => {
             return res.status(404).json({message: `Cannot find your restaurant.`});
         }
 
-        existingRestaurant.restaurantName = req.body.restaurantName;
-        existingRestaurant.city = req.body.city;
-        existingRestaurant.country = req.body.country;
-        existingRestaurant.deliveryPrice = req.body.deliveryPrice;
-        existingRestaurant.estimatedDeliveryTime = req.body.estimatedDeliveryTime;
-        existingRestaurant.cuisines = req.body.cuisines;
-        existingRestaurant.menuItems = req.body.menuItems;
+        if (req.body.isrestaurantmenu !== undefined) {
+            //existingRestaurant.menuItems = req.body.menuItems;
+            let reqmenuItems = req.body.menuItems.map((item:any) => {
+                return {
+                    ...(item.Id && { _id: item.Id }), // Only include _id if Id exists
+                    name: item.name,
+                    price: item.price,
+                    description: item.description,
+                    imageUrl: item.imageUrl
+                }
+            }) 
+            existingRestaurant.menuItems = reqmenuItems;
+        }else{
+            existingRestaurant.restaurantName = req.body.restaurantName;
+            existingRestaurant.city = req.body.city;
+            existingRestaurant.country = req.body.country;
+            existingRestaurant.deliveryPrice = req.body.deliveryPrice;
+            existingRestaurant.estimatedDeliveryTime = req.body.estimatedDeliveryTime;
+            existingRestaurant.cuisines = req.body.cuisines;
+        }
 
         if(req.file){
             existingRestaurant.imageUrl = await uploadImage(req.file as Express.Multer.File);

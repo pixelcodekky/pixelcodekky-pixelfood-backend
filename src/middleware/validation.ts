@@ -15,6 +15,16 @@ const handleValidationErros = async (req: Request, res:Response, next: NextFunct
     next();
 }
 
+const handleParseMenuItemsJson = (req: Request, res: Response, next: NextFunction) => {
+    
+    try{
+        req.body.menuItems = JSON.parse(req.body.menuItems);
+    } catch (error) {
+        return res.status(400).json({ errors: [{ msg: 'Invalid JSON for menu items' }] });
+    }
+    next();
+}
+
 export const validateMyUserRequest = [
     body('name').isString().notEmpty().withMessage('Name allow  only string and not empty'),
     body('mobileNumber').isNumeric().notEmpty().withMessage('mobile number should contain only numbers, less than 9'),
@@ -29,11 +39,20 @@ export const validateMyRestaurantRequest = [
     body('deliveryPrice').isFloat({min:0}).withMessage('Delivery price must be  a positive number'),
     body('estimatedDeliveryTime').isInt({min:0}).withMessage('Delivery time must be  a positive number'),
     body('cuisines').isArray().withMessage('Cuisines must be array').not().isEmpty().withMessage('Cuisines array cannot be empty'),
+    //body('menuItems').isArray().withMessage('Menu items must be an array of objects'),
+    //body('menuItems.*.name').notEmpty().withMessage('Menu item name is required'),
+    //body('menuItems.*.price').notEmpty().withMessage('Menu item price is must be number'),
+    handleValidationErros,
+] 
+
+export const validateMyRestaurantMenuItemsRequest = [
+    upload.none(),
+    handleParseMenuItemsJson,
     body('menuItems').isArray().withMessage('Menu items must be an array of objects'),
     body('menuItems.*.name').notEmpty().withMessage('Menu item name is required'),
     body('menuItems.*.price').notEmpty().withMessage('Menu item price is must be number'),
     handleValidationErros,
-] 
+]
 
 export const validateMyAddressRequest = [
     upload.none(),

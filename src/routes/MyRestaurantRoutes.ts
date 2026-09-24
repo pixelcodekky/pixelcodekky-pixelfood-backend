@@ -2,7 +2,7 @@ import express from 'express';
 import multer from 'multer';
 import MyRestaurantController from '../controllers/MyRestaurantController';
 import { jwtCheck, jwtParse } from '../middleware/auth';
-import { validateMyRestaurantRequest } from '../middleware/validation';
+import { validateMyRestaurantMenuItemsRequest, validateMyRestaurantRequest } from '../middleware/validation';
 
 const router = express.Router();
 
@@ -34,5 +34,10 @@ jwtCheck,
 jwtParse,
 MyRestaurantController.updateRestaurant);
 
+router.put('/menuitems',
+validateMyRestaurantMenuItemsRequest,
+jwtCheck,
+jwtParse,
+MyRestaurantController.updateRestaurant);
 
 export default router;

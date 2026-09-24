@@ -90,6 +90,7 @@ const handleCheckoutSessionCompleted = async (event: Stripe.CheckoutSessionCompl
         order.status = "paid";
         order.payment_status = event.data.object.payment_status;
         order.payment_intent = event.data.object.payment_intent?.toString(); //for refund or dispute, use payment_intent id to lookup object
+        order.charge_id = event.data.object.payment_intent?.toString(); //for refund or dispute, use payment_intent id to lookup object
 
         await order.save();
 
@@ -400,9 +401,9 @@ const refundOrder = async (req: Request, res: Response) => {
             return res.status(404).json({message: "Order not found"});
         }
 
-        if(order.user.toString() !== req.userId){
-            return res.status(403).json({message: "Unauthorized"});
-        }
+        // if(order.user.toString() !== req.userId){
+        //     return res.status(403).json({message: "Unauthorized"});
+        // }
 
         const refundableStatuses = ["paid", "inProgress", "outForDelivery"];
         if(!refundableStatuses.includes(order.status as string)){
