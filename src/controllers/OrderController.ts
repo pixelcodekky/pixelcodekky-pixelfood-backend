@@ -53,28 +53,42 @@ const stripeWebhookHandler = async (req: Request, res: Response) => {
         return res.status(400).send(`Webhook Error: ${error.message}`);
     }
 
-    if(event?.type === 'checkout.session.completed'){
-        console.log('Checkout session completed event received');
-        let eventresult = await handleCheckoutSessionCompleted(event);        
-        if(!eventresult?.status){
-            return res.status(404).json({message: eventresult?.message});
+    switch (event?.type) {
+        case 'checkout.session.completed': {
+            console.log('Checkout session completed event received');
+            const eventResult = await handleCheckoutSessionCompleted(event);
+            if (!eventResult?.status) {
+                return res.status(404).json({message: eventResult?.message});
+            }
+            break;
         }
-    }else if(event?.type === 'checkout.session.expired'){
-        let eventresult = await handleCheckoutSessionExpired(event);
-        if(!eventresult?.status){
-            return res.status(404).json({message: eventresult?.message});
+        case 'checkout.session.expired': {
+            const eventResult = await handleCheckoutSessionExpired(event);
+            if (!eventResult?.status) {
+                return res.status(404).json({message: eventResult?.message});
+            }
+            break;
         }
-    }else if(event?.type === 'charge.succeeded'){
-        console.log('Charge succeeded event received');
-        //save to log for this transaction
-        let eventresult = await handleChargeSucceeded(event);
-        
-    }else if(event.type === 'charge.failed'){
-        let eventresult = await handleChargeFailed(event as Stripe.ChargeFailedEvent);
-    }else if(event.type === 'charge.refunded'){
-        let eventresult = await handleChargeRefunded(event as Stripe.ChargeRefundedEvent);
-        if(!eventresult?.status){
-            return res.status(404).json({message: eventresult?.message});
+        case 'payment_intent.succeeded': {
+            console.log('Payment intent succeeded event received');
+            // Save to log for this transaction.
+            //await handlePaymentIntentSucceeded(event);
+            break;
+        }
+        case 'charge.succeeded':
+            console.log('Charge succeeded event received');
+            // Save to log for this transaction.
+            await handleChargeSucceeded(event);
+            break;
+        case 'charge.failed':
+            await handleChargeFailed(event as Stripe.ChargeFailedEvent);
+            break;
+        case 'charge.refunded': {
+            const eventResult = await handleChargeRefunded(event as Stripe.ChargeRefundedEvent);
+            if (!eventResult?.status) {
+                return res.status(404).json({message: eventResult?.message});
+            }
+            break;
         }
     }
 
@@ -134,17 +148,19 @@ const handleChargeSucceeded = async (event: Stripe.ChargeSucceededEvent) => {
     try {
         const charge = event.data.object;
         let metadata = charge.metadata;
-
+        console.log(`Charge succeeded event received for charge ${charge.id} with metadata:`, metadata);
         if(!Object.keys(metadata).length && charge.payment_intent){
             const paymentIntent = await STRIPE.paymentIntents.retrieve(charge.payment_intent.toString());
 
+            console.log(`Retrieved payment_intent ${charge.payment_intent} with metadata:`, paymentIntent.metadata);
+            
             if(!paymentIntent.metadata || !Object.keys(paymentIntent.metadata).length){
                 console.log(`No metadata found in this payment_intent ${charge.payment_intent}`);
                 return {status: false, message: "No metadata found in this payment_intent ${charge.payment_intent}"};
             }
 
             metadata = paymentIntent.metadata;
-
+            console.log(`Metadata from payment_intent ${charge.payment_intent}:`, metadata);
             const order = await Order.findById(metadata.orderId);
         
             if(!order){
@@ -338,7 +354,6 @@ const createDeliveryLineItem = (deliveryfee: number, taxRateID: string) => {
 }
 
 const createSession = async (lineItems: Stripe.Checkout.SessionCreateParams.LineItem[], orderId: string, deliveryPrice: number, restaurantId: string, taxRateID: string) => {
-
     const sessionData = await STRIPE.checkout.sessions.create({
         line_items: lineItems,
         shipping_options: [
@@ -361,6 +376,11 @@ const createSession = async (lineItems: Stripe.Checkout.SessionCreateParams.Line
         mode: "payment",
         metadata: {
             orderId, restaurantId,
+        },
+        payment_intent_data: {
+            metadata: {
+                orderId, restaurantId, //for refund or dispute, use payment_intent id to lookup object
+            }
         },
         success_url: `${FRONTEND_URL}/order/${orderId}/track`,
         cancel_url: `${FRONTEND_URL}/detail/${restaurantId}`,
