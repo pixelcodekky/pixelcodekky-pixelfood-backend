@@ -90,8 +90,7 @@ const handleCheckoutSessionCompleted = async (event: Stripe.CheckoutSessionCompl
         order.status = "paid";
         order.payment_status = event.data.object.payment_status;
         order.payment_intent = event.data.object.payment_intent?.toString(); //for refund or dispute, use payment_intent id to lookup object
-        order.charge_id = event.data.object.payment_intent?.toString(); //for refund or dispute, use payment_intent id to lookup object
-
+        
         await order.save();
 
         return {status: true, message: "Order payment Updated."}
