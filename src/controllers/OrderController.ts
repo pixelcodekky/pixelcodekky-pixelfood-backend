@@ -132,19 +132,35 @@ const handleChargeSucceeded = async (event: Stripe.ChargeSucceededEvent) => {
     
     //update Charge Id
     try {
-        const order = await Order.findById(event.data.object.metadata?.orderId);
+        const charge = event.data.object;
+        let metadata = charge.metadata;
+
+        if(!Object.keys(metadata).length && charge.payment_intent){
+            const paymentIntent = await STRIPE.paymentIntents.retrieve(charge.payment_intent.toString());
+
+            if(!paymentIntent.metadata || !Object.keys(paymentIntent.metadata).length){
+                console.log(`No metadata found in this payment_intent ${charge.payment_intent}`);
+                return {status: false, message: "No metadata found in this payment_intent ${charge.payment_intent}"};
+            }
+
+            metadata = paymentIntent.metadata;
+
+            const order = await Order.findById(metadata.orderId);
         
-        if(!order){
-            return {status: false, message: 'Order not found'}
+            if(!order){
+                return {status: false, message: 'Order not found'}
+            }
+
+            order.charge_id = event.data.object.id; //for refund or dispute, use
+            order.refunded = event.data.object.refunded;
+            order.receipt_url = event.data.object.receipt_url;
+
+            await order.save();
+            return {status: true, message: "Charge Successful"}
+        }else{
+            return {status: false, message: "No metadata found in this payment_intent ${metadata.payment_intent}"};
         }
-
-        order.charge_id = event.data.object.id; //for refund or dispute, use
-        order.refunded = event.data.object.refunded;
-        order.receipt_url = event.data.object.receipt_url;
-
-        await order.save();
-        return {status: true, message: "Charge Successful"}
-
+        
     } catch (error) {
         return {status: false, message: error};
     }
