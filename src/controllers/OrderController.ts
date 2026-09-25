@@ -148,34 +148,22 @@ const handleChargeSucceeded = async (event: Stripe.ChargeSucceededEvent) => {
     try {
         const charge = event.data.object;
         let metadata = charge.metadata;
+
         console.log(`Charge succeeded event received for charge ${charge.id} with metadata:`, metadata);
-        if(!Object.keys(metadata).length && charge.payment_intent){
-            const paymentIntent = await STRIPE.paymentIntents.retrieve(charge.payment_intent.toString());
 
-            console.log(`Retrieved payment_intent ${charge.payment_intent} with metadata:`, paymentIntent.metadata);
-            
-            if(!paymentIntent.metadata || !Object.keys(paymentIntent.metadata).length){
-                console.log(`No metadata found in this payment_intent ${charge.payment_intent}`);
-                return {status: false, message: "No metadata found in this payment_intent ${charge.payment_intent}"};
-            }
-
-            metadata = paymentIntent.metadata;
-            console.log(`Metadata from payment_intent ${charge.payment_intent}:`, metadata);
-            const order = await Order.findById(metadata.orderId);
+        const order = await Order.findById(metadata.orderId);
         
-            if(!order){
-                return {status: false, message: 'Order not found'}
-            }
-
-            order.charge_id = event.data.object.id; //for refund or dispute, use
-            order.refunded = event.data.object.refunded;
-            order.receipt_url = event.data.object.receipt_url;
-
-            await order.save();
-            return {status: true, message: "Charge Successful"}
-        }else{
-            return {status: false, message: "No metadata found in this payment_intent ${metadata.payment_intent}"};
+        if(!order){
+            return {status: false, message: 'Order not found'}
         }
+
+        order.charge_id = event.data.object.id; //for refund or dispute, use
+        order.refunded = event.data.object.refunded;
+        order.receipt_url = event.data.object.receipt_url;
+
+        await order.save();
+        
+        return {status: true, message: "Charge Successful"}
         
     } catch (error) {
         return {status: false, message: error};
